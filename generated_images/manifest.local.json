@@ -1,0 +1,35 @@
+{
+  "generated_at": "2026-07-14T18:46:36.171973+00:00",
+  "source": "phosphene-mac-mflux",
+  "base_url": "https://macbook-pro.tailc4e23e.ts.net:8443",
+  "native_size": "1280x720",
+  "default_size": {
+    "width": 768,
+    "height": 1024
+  },
+  "images": [
+    {
+      "name": "psychiatry_depressed_patient_mac",
+      "prompt": "A compassionate portrait of a depressed patient sitting alone on a couch by a dim window, arms wrapped around themselves, gazing softly outward with a melancholic yet gentle expression.",
+      "path": "generated_images/psychiatry_depressed_patient_mac.png",
+      "width": 768,
+      "height": 1024,
+      "job_id": "j-19f61eb918e-010",
+      "source": "phosphene-mac-mflux",
+      "native_size": "1280x720",
+      "base_url": "https://macbook-pro.tailc4e23e.ts.net:8443",
+      "manual": true
+    },
+    {
+      "name": "psychiatry_recovery_mac",
+      "prompt": "A hopeful psychiatry scene: a depressed patient beginning to recover, sitting by a window with a small growing plant, soft warm light returning, gentle expression of relief. Photorealistic, 35mm film grain, muted then warming tones. Centered composition, subject fully visible.",
+      "path": "generated_images/psychiatry_recovery_mac.png",
+      "width": 768,
+      "height": 1024,
+      "job_id": "j-19f61f3d006-012",
+      "source": "phosphene-mac-mflux",
+      "native_size": "1280x720",
+      "base_url": "https://macbook-pro.tailc4e23e.ts.net:8443"
+    }
+  ]
+}

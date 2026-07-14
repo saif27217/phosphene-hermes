@@ -37,40 +37,46 @@ curl -sSk -X POST \
   "$BASE_URL/queue/add"
 ```
 
-## Image Generation (FLUX.1 [dev] on fal.ai)
+## Image Generation — Two Backends
 
-Phosphene itself is a **video** engine (LTX 2.3). For static 3:4 portrait
-images we use a separate, purpose-built image model — **FLUX.1 [dev]** via
-fal.ai — which gives exact resolution control and clean frames. The full
-end-to-end pipeline lives in [`IMAGE_GEN_WORKFLOW.md`](./IMAGE_GEN_WORKFLOW.md).
+Phosphene itself is a **video** engine (LTX 2.3). For still 3:4 portrait images
+we run **FLUX** two ways:
+
+1. **Local (your Mac)** — Phosphene's bundled `mflux` (Apple-Silicon FLUX),
+   driven over Tailscale. Private, no cloud key. → [`LOCAL_IMAGE_GEN_WORKFLOW.md`](./LOCAL_IMAGE_GEN_WORKFLOW.md)
+   (`scripts/local_image_gen.py`, `examples/generate_local_images.sh`)
+2. **Cloud (fal.ai)** — `fal-ai/flux/dev`, exact 768×1024, clean frames.
+   → [`IMAGE_GEN_WORKFLOW.md`](./IMAGE_GEN_WORKFLOW.md)
+   (`scripts/image_gen.py`, `examples/generate_images.sh`)
+
+Both emit true 3:4 (768×1024) PNGs + a manifest. Same prompt format
+(`prompts/*.tsv`: `name<TAB>prompt`). The local Mac endpoint emits 1280×720,
+so the local script center-crops to 3:4.
 
 ```bash
-# Generate the curated 3:4 psychiatry set (768x1024)
+# Local (Mac)
+./examples/generate_local_images.sh
+# Cloud (fal.ai)
 ./examples/generate_images.sh
-# → generated_images/*.png  +  generated_images/manifest.json
 ```
-
-- `scripts/image_gen.py` — FLUX generator (fal_client or REST backend, auto-selected)
-- `prompts/psychiatry.tsv` — curated psychiatry / mental-health prompts
-- `examples/generate_images.sh` — one-command wrapper
-
-**Prereqs:** `pip install fal-client pillow` then `fal-client login`, **or**
-`export FAL_KEY=...` with `pip install requests pillow`.
 
 ## Repository Structure
 
 ```
 phosphene-hermes/
 ├── README.md                    # This file
-├── IMAGE_GEN_WORKFLOW.md        # FLUX.1 [dev] 3:4 image generation (end-to-end)
+├── IMAGE_GEN_WORKFLOW.md        # FLUX.1 [dev] (fal.ai cloud) 3:4 image generation
+├── LOCAL_IMAGE_GEN_WORKFLOW.md  # FLUX via local Mac/Phosphene (mflux) 3:4 image generation
 ├── IMAGE_TO_VIDEO_WORKFLOW.md   # Image → Video via Phosphene (LTX)
 ├── skills/
 │   ├── phosphene-hermes.md      # Full API reference (Hermes skill)
 │   └── video-prompt-enhancer.md # Cinematic prompt framework
 ├── prompts/
-│   └── psychiatry.tsv           # Curated 3:4 psychiatry image prompts
+│   ├── psychiatry.tsv           # Cloud image prompts
+│   └── psychiatry_local.tsv     # Local (Mac) image prompts
 ├── examples/
-│   ├── generate_images.sh       # FLUX image generation wrapper
+│   ├── generate_images.sh        # fal.ai FLUX image wrapper
+│   ├── generate_local_images.sh  # Local Mac FLUX image wrapper
 │   ├── quick-test.sh            # Minimal test video
 │   ├── landscape.sh             # High-quality landscape
 │   ├── portrait.sh              # Portrait video
@@ -78,11 +84,12 @@ phosphene-hermes/
 │   ├── monitor.sh               # Wait for job completion
 │   └── download-all.sh          # Download all outputs
 ├── scripts/
-│   ├── image_gen.py             # Python wrapper for FLUX image generation
+│   ├── image_gen.py             # Python wrapper for fal.ai FLUX image generation
+│   ├── local_image_gen.py       # Python wrapper for local Mac/Phosphene FLUX generation
 │   ├── generate.py              # Python wrapper for Phosphene video generation
 │   ├── monitor.py               # Job monitoring script
 │   └── upload-image.py          # Image upload helper
-└── generated_images/            # FLUX outputs (3:4 PNGs + manifest.json)
+└── generated_images/            # FLUX outputs (3:4 PNGs + manifest*.json)
 ```
 
 ## API Endpoints

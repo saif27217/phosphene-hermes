@@ -690,6 +690,43 @@ fal_client.run("fal-ai/flux/dev", arguments={
 - `prompts/psychiatry.tsv` holds the curated set: therapy session, mindfulness, neuroplasticity.
 - Billing: ~$0.025 / megapixel on fal.ai.
 
+### Image Generation — LOCAL Mac (mflux) — 3:4 Portraits
+
+**Engine**: Phosphene's bundled **`mflux`** (Apple-Silicon FLUX port) on the MacBook,
+driven over Tailscale. Fully local — no fal.ai key. This is the local counterpart
+to the fal.ai path above. Full pipeline: [`LOCAL_IMAGE_GEN_WORKFLOW.md`](../../LOCAL_IMAGE_GEN_WORKFLOW.md).
+
+**Endpoint facts (probed 2026-07-14, Phosphene v3.2.5):**
+- Image jobs use the SAME `/queue/add` as video, with `mode=image`.
+- `width`/`height`/`aspect_ratio` are **ignored** — output is always `1280x720`.
+- Output file: `cand_<rand>_mflux.png`.
+- Download via `GET /image?path=<abs>&v=<ts>` — **NOT** `/file` (video-only).
+- Self-signed TLS: use `verify=False` / `curl -k`. No auth (Tailscale LAN).
+
+**Run:**
+```bash
+# Curated 3:4 psychiatry set via the Mac (768x1024, cropped from 1280x720)
+./examples/generate_local_images.sh
+
+# Single image
+python3 scripts/local_image_gen.py \
+  --prompt "A depressed patient on a couch, dim window" \
+  --name psychiatry_depressed --out generated_images
+```
+
+**Submit (curl):**
+```bash
+curl -sSk -X POST -d "mode=image" \
+  -d "prompt=A calm psychiatry consultation room" \
+  "https://macbook-pro.tailc4e23e.ts.net:8443/queue/add"
+# → {"ok": true, "id": "j-xxxxxxxxxxxx-012"}
+```
+
+**Notes:**
+- `scripts/local_image_gen.py` submits, polls `/status`, resolves the `/image` URL from `/outputs`, downloads, and center-crops to exact 768×1024.
+- Recorded job IDs live in `generated_images/manifest.local.json`.
+- Verified live: produced a real 768×1024 PNG (job `j-19f61f3d006-012`).
+
 #### Fast Mode (M1/M2)
 - Quantizes model to 4-bit on load
 - Much faster on M1/M2 GPUs
