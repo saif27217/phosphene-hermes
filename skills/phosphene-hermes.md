@@ -726,6 +726,8 @@ curl -sSk -X POST -d "mode=image" \
 - `scripts/local_image_gen.py` submits, polls `/status`, resolves the `/image` URL from `/outputs`, downloads, and center-crops to exact 768×1024.
 - Recorded job IDs live in `generated_images/manifest.local.json`.
 - Verified live: produced a real 768×1024 PNG (job `j-19f61f3d006-012`).
+- Full end-to-end pipeline (including the `python3 scripts/local_image_gen.py` run example and probed endpoint facts): [`LOCAL_IMAGE_GEN_WORKFLOW.md`](../../LOCAL_IMAGE_GEN_WORKFLOW.md) in this repo.
+- That same workflow + script also ship inside the installed Hermes skill (`~/.hermes/skills/media/phosphene-hermes/`), so the agent can run local Mac images without touching the repo.
 
 #### Fast Mode (M1/M2)
 - Quantizes model to 4-bit on load
