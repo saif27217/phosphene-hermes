@@ -8,6 +8,39 @@ LTX 2.3 has a known training data pollution issue — the model generates random
 
 **Important:** Even with `mode=i2v`, the last ~5-10 frames may still have text artifacts. **Solution:** Generate extra frames and trim the end.
 
+## ⚠️ Image Compatibility — What Works vs. What Doesn't
+
+Not all images work with LTX. The model's text artifact issue is triggered by certain visual characteristics:
+
+### ✅ Images That Work (Bright/Indoor)
+- Bright, well-lit scenes
+- Indoor settings with natural or diffused light
+- Clear human subjects with visible faces
+- Warm color tones (amber, beige, white)
+- Professional/clinical settings (offices, therapy rooms)
+- Multiple people interacting
+
+### ❌ Images That Fail (Dark/Moody)
+- Dark, moody lighting
+- Outdoor natural settings (forests, mountains)
+- Single subjects with hidden faces
+- Cool/dark color palettes (deep browns, blacks)
+- Isolated, lonely compositions
+
+### Why?
+LTX 2.3's training data pollution (Vietnamese text/logos) is more pronounced in:
+- Low-light scenes
+- Outdoor/natural environments
+- Dark, moody atmospheres
+- Compositions with large empty/dark areas
+
+### Workaround
+If your image is dark/moody, try:
+1. **Brighten the image first** — increase exposure/brightness before uploading
+2. **Use a similar but brighter image** — find alternative with better lighting
+3. **Post-process** — AI text removal on video frames
+4. **Accept the limitation** — not all images work with LTX
+
 ## Quick Start
 
 ```bash

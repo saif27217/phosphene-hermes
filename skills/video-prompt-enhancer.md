@@ -198,9 +198,40 @@ When given a bare-minimum prompt, apply this transformation:
 | Conflicting lighting | Commit to one lighting setup |
 | Vague ("a nice room") | Specific ("warm office with leather chairs and bookshelves") |
 
-## Phosphene-Specific Settings
+## Image Compatibility (LTX 2.3)
 
-When generating with Phosphene's LTX model, always use Image → Video mode (`mode=i2v`) to avoid text artifacts. Key parameters:
+**NOT ALL images work equally well with Image → Video mode.** Some images trigger text artifacts more aggressively than others.
+
+### Safe Image Types (Minimal Text Artifacts)
+- Bright, well-lit indoor scenes (offices, therapy rooms, studios)
+- Portraits with good lighting
+- Clinical/professional settings
+- Well-exposed outdoor scenes with natural light
+
+### Risky Image Types (May Trigger Text)
+- Dark, moody, low-contrast scenes (forests, night scenes, shadows)
+- Heavy vignetting or dramatic lighting
+- Very desaturated or monochrome images
+- Complex textures with fine detail
+
+### Test Results (2026-07-14)
+| Image Type | Text Artifacts | Notes |
+|------------|----------------|-------|
+| Pexels therapy (bright office) | ✅ Clean | Last 5-10 frames only |
+| Pexels portrait (well-lit) | ✅ Clean | Last 5-10 frames only |
+| Forest scene (dark/moody) | ❌ Text in 90%+ frames | Fundamentally incompatible |
+
+### Workaround for Dark Scenes
+1. Try multiple seeds (some may work better)
+2. Use simpler, shorter prompts
+3. Generate extra frames and trim aggressively
+4. Consider using a different, brighter reference image
+
+## Phosphene/LTX-Specific Settings
+
+### Image → Video Mode (Required)
+
+Always use Image → Video mode (`mode=i2v`) to avoid text artifacts:
 
 ```bash
 -d "mode=i2v"
@@ -209,7 +240,64 @@ When generating with Phosphene's LTX model, always use Image → Video mode (`mo
 -d "upscale=off"
 ```
 
+### Image Compatibility — What Works
+
+**✅ Works (Bright/Indoor):**
+- Bright, well-lit scenes
+- Indoor settings with natural or diffused light
+- Clear human subjects with visible faces
+- Warm color tones (amber, beige, white)
+- Professional/clinical settings (offices, therapy rooms)
+- Multiple people interacting
+
+**❌ Fails (Dark/Moody):**
+- Dark, moody lighting
+- Outdoor natural settings (forests, mountains)
+- Single subjects with hidden faces
+- Cool/dark color palettes (deep browns, blacks)
+- Isolated, lonely compositions
+
+### Why Dark Images Fail
+
+LTX 2.3's training data pollution (Vietnamese text/logos) is more pronounced in:
+- Low-light scenes
+- Outdoor/natural environments
+- Dark, moody atmospheres
+- Compositions with large empty/dark areas
+
+### Workarounds for Dark Images
+
+1. **Brighten the image first** — increase exposure/brightness before uploading
+2. **Use a similar but brighter image** — find alternative with better lighting
+3. **Post-process** — AI text removal on video frames
+4. **Accept the limitation** — not all images work with LTX
+
+### Generate Extra + Trim
+
+Even with `mode=i2v`, the last ~5-10 frames may have text. Generate extra frames and trim:
+
+```bash
+# Generate 161 frames for ~5s clean video
+# Trim last 20 frames
+ffmpeg -i input.mp4 -frames:v 141 -c:v libx264 -c:a copy output_trimmed.mp4 -y
+```
+
 See `IMAGE_TO_VIDEO_WORKFLOW.md` for complete workflow.
+
+```bash
+# Generate 161 frames, trim last 20 → clean 141 frames (~5.9s)
+ffmpeg -i input.mp4 -frames:v 141 -c:v libx264 -c:a copy trimmed.mp4 -y
+```
+
+**Frame budget**: Want 5s clean video? Generate 161 frames (~6.7s), trim last 20 frames.
+
+See `IMAGE_TO_VIDEO_WORKFLOW.md` for complete workflow.
+
+## User Preferences
+
+- **Show reference image before generating**: When using Image → Video mode, always show the reference image to the user first and confirm before submitting the job. Use `vision_analyze` to describe the image, then send it via `MEDIA:` path.
+- **3:4 portrait ratio preferred**: Default to 576×768 (3:4) for therapy/portrait content unless user specifies otherwise.
+- **Lower quality for iteration**: Use `quality=quick` for faster iteration, switch to `balanced` for final renders.
 
 ## Prompt Length Guidelines
 
@@ -227,6 +315,7 @@ See `IMAGE_TO_VIDEO_WORKFLOW.md` for complete workflow.
 | `references/camera-vocabulary.md` | Need full camera movement reference |
 | `references/lighting-keywords.md` | Need lighting terminology |
 | `references/style-keywords.md` | Need visual style vocabulary |
+| `references/worked-examples.md` | See before/after examples of prompt enhancement |
 
 ## Sources
 
