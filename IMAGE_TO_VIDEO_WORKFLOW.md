@@ -6,6 +6,8 @@ Generate portrait videos from reference images using Phosphene's LTX model. **Th
 
 LTX 2.3 has a known training data pollution issue — the model generates random Vietnamese text/logos in text-to-video mode regardless of prompt, seed, or settings. **Image → Video (`mode=i2v`) is the only workaround** that produces clean output.
 
+**Important:** Even with `mode=i2v`, the last ~5-10 frames may still have text artifacts. **Solution:** Generate extra frames and trim the end.
+
 ## Quick Start
 
 ```bash
@@ -127,7 +129,33 @@ Formula: `frames = (seconds × 24) + 1`
 | 37 | ~1.5s | ~90s |
 | 73 | ~3s | ~180s |
 | 121 | ~5s | ~300s |
+| 161 | ~6.7s | ~400s |
 | 241 | ~10s | ~600s |
+
+## ⚠️ Text Artifact Workaround: Generate Extra + Trim
+
+**Problem:** Even with `mode=i2v`, the last ~5-10 frames may have text artifacts.
+
+**Solution:** Generate extra frames, then trim the end with ffmpeg.
+
+```bash
+# 1. Generate 161 frames (want ~5s clean = 121 frames)
+#    Extra 40 frames as buffer for text artifacts
+
+# 2. Trim last 20 frames
+ffmpeg -i input.mp4 -frames:v 141 -c:v libx264 -c:a copy output_trimmed.mp4 -y
+
+# 3. Verify last frame is clean
+ffmpeg -i output_trimmed.mp4 -vf "select=eq(n\,140)" -vframes 1 last_frame.jpg -y
+```
+
+**Frame buffer guide:**
+| Desired Duration | Generate Frames | Trim To | Buffer |
+|-----------------|-----------------|---------|--------|
+| ~3s (73 frames) | 93 | 73 | 20 frames |
+| ~5s (121 frames) | 141 | 121 | 20 frames |
+| ~7s (161 frames) | 181 | 161 | 20 frames |
+| ~10s (241 frames) | 261 | 241 | 20 frames |
 
 ## Quality Presets
 
@@ -230,33 +258,58 @@ ffmpeg -i output.mp4 -vf "select=eq(n\,90)" -vframes 1 frame_90.jpg -y
 
 ## Prompt Templates
 
-### Therapy/Psychiatry
+**Tip:** Use the `video-prompt-enhancer` skill for cinematic prompts. See `skills/video-prompt-enhancer.md`.
+
+### Therapy/Psychiatry (Enhanced)
+
+```
+Medium shot at eye level. A therapist in a plaid shirt sits in the foreground, pen in hand, gesturing as she speaks. Across from her, a client in a soft green sweater leans forward slightly, hands raised in expressive conversation, eyes locked on the therapist. The room has a muted purple wall, a warm lamp casting gentle light, and a small potted plant on a side table. Soft, even lighting fills the space. The camera slowly pushes in, settling on the client's face as she nods thoughtfully. Warm amber tones, shallow depth of field, film grain. Quiet, intimate, contemplative.
+```
+
+### Professional Portrait (Enhanced)
+
+```
+Close-up at eye level. A professional in their mid-30s sits in a modern office, hands clasped on the desk. Natural window light from the left illuminates their face, creating soft shadows on the right side. The camera holds perfectly still. Warm earth tones, leather chair visible in soft focus behind them. Film grain, shallow depth of field, 85mm portrait lens. Thoughtful, serene.
+```
+
+### Creative/Artistic (Enhanced)
+
+```
+Medium wide shot. An artist stands in their studio, surrounded by canvases and paint supplies. Natural light streams through large windows, casting long shadows across the wooden floor. The camera slowly pans right, revealing more of the studio as the artist turns to examine a painting. Rich saturated colors, warm golden tones. The faint sound of a brush against canvas. Creative, inspiring.
+```
+
+### Medical/Clinical (Enhanced)
+
+```
+Medium shot, slightly low angle. A doctor in a white coat sits across from a patient, clipboard in hand. Clean clinical setting with soft overhead lighting. The doctor leans forward slightly, listening intently. The camera slowly pushes in, settling on a close-up of the doctor's face as they nod thoughtfully. Cool blue tones, sterile environment, shallow depth of field. Professional, compassionate.
+```
+
+### Basic (Minimal — for quick tests)
 
 ```
 A warm, comfortable therapy session. The therapist listens attentively while the client speaks. Natural window light, photorealistic, documentary style.
 ```
 
-### Professional Portrait
-
-```
-A professional portrait in a modern office, natural lighting, shallow depth of field, photorealistic, corporate photography style.
-```
-
-### Creative/Artistic
-
-```
-An artist in their studio, surrounded by paintings, natural light from large windows, creative atmosphere, documentary photography.
-```
-
-### Medical/Clinical
-
-```
-A doctor in a clinical setting, consulting with a patient, professional atmosphere, medical photography, clean lighting.
-```
-
 ## Results
 
-### Our Test Run
+### Latest: Enhanced Prompt + Trim (✅ Best Result)
+
+```
+Job:       j-19f6035f01b-016
+Status:    ✅ done
+Mode:      i2v (Image → Video)
+Resolution: 576×768 (3:4 portrait)
+Frames:    161 generated → 141 trimmed (~5.9s clean)
+Quality:   quick
+Elapsed:   401s (~6.7 min)
+Output:    medium_shot_at_eye_level_a_2.mp4 → trimmed
+Size:      632KB (trimmed)
+Reference: Pexels #7176316 (therapy session)
+Prompt:    Enhanced with 6-element framework
+Text artifacts: NONE (trimmed) ✓
+```
+
+### Previous: Basic Prompt
 
 ```
 Job:       j-19f6014d488-014
@@ -280,7 +333,17 @@ Text artifacts: NONE ✓
 
 ### Text Artifacts Still Appearing
 
-**Fix**: Ensure you're using `mode=i2v`, not `mode=t2v`. Text-to-Video mode has training data pollution.
+**Fix 1**: Ensure you're using `mode=i2v`, not `mode=t2v`. Text-to-Video mode has training data pollution.
+
+**Fix 2**: Even with `mode=i2v`, the last ~5-10 frames may have text. Generate extra frames (e.g., 161 instead of 121) and trim the end:
+```bash
+ffmpeg -i input.mp4 -frames:v 141 -c:v libx264 -c:a copy output_trimmed.mp4 -y
+```
+
+**Fix 3**: Check the last frame to verify it's clean:
+```bash
+ffmpeg -i output_trimmed.mp4 -vf "select=eq(n\,140)" -vframes 1 last_frame.jpg -y
+```
 
 ### Upload Error: "no field 'image' or 'audio'"
 
@@ -300,7 +363,8 @@ phosphene-hermes/
 ├── LANDSCAPE_VIDEO_WORKFLOW.md
 ├── README.md
 ├── skills/
-│   └── phosphene-hermes.md
+│   ├── phosphene-hermes.md
+│   └── video-prompt-enhancer.md    # Cinematic prompt framework
 ├── examples/
 └── scripts/
 ```
