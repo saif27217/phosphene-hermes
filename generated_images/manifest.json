@@ -1,0 +1,35 @@
+{
+  "generated_at": "2026-07-14T18:05:00+00:00",
+  "model": "fal-ai/flux/dev",
+  "backend": "flux-via-hermes-gateway",
+  "default_size": {"width": 768, "height": 1024},
+  "images": [
+    {
+      "name": "psychiatry_therapy_session",
+      "prompt": "A warm, intimate psychiatry therapy session in a softly lit room. A compassionate therapist and a client sit facing each other in comfortable armchairs, the client speaking with a relaxed expression, the therapist listening attentively. A small plant and warm lamp light. Subtle luminous neural-network strands glow gently in the air, evoking thought and healing. Photorealistic, 35mm film grain, shallow depth of field, warm earth tones, peaceful and safe atmosphere. Centered composition, subject fully visible.",
+      "path": "generated_images/psychiatry_therapy_session.png",
+      "width": 768,
+      "height": 1024,
+      "seed": null,
+      "model": "fal-ai/flux/dev"
+    },
+    {
+      "name": "psychiatry_mindfulness",
+      "prompt": "A serene mental-health mindfulness scene: a calm person meditating by a sunlit window, eyes gently closed, hands resting in their lap. Around them, delicate threads of warm golden light form a soft, glowing brain silhouette that dissolves into floating particles of calm. Photorealistic, soft natural light, 35mm film grain, peaceful, hopeful, healing atmosphere. Centered composition, subject fully visible.",
+      "path": "generated_images/psychiatry_mindfulness.png",
+      "width": 768,
+      "height": 1024,
+      "seed": null,
+      "model": "fal-ai/flux/dev"
+    },
+    {
+      "name": "psychiatry_neuroplasticity",
+      "prompt": "A symbolic psychiatry image of hope and neuroplasticity: an anatomically inspired human brain gracefully formed from luminous warm light and gentle neural pathways, cradled by two open caring hands. Soft bokeh background of a calm dawn sky. Photorealistic rendering of the hands and ethereal glow of the brain, 35mm film grain, inspiring and healing mood, warm tones. Centered composition, subject fully visible.",
+      "path": "generated_images/psychiatry_neuroplasticity.png",
+      "width": 768,
+      "height": 1024,
+      "seed": null,
+      "model": "fal-ai/flux/dev"
+    }
+  ]
+}

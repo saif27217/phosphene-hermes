@@ -649,6 +649,47 @@ for o in data['outputs']:
 - Ideogram redraws the idea in its own style
 - For faithful copy, use Reference Edit engine instead
 
+### Image Generation — FLUX.1 [dev] (fal.ai) — 3:4 Portraits
+
+**Engine**: `fal-ai/flux/dev` (FLUX.1 [dev], 12B flow transformer) via fal.ai.
+Phosphene itself is a video engine; this is the dedicated static-image path,
+used for 3:4 psychiatry / mental-health portraits. Full pipeline:
+[`IMAGE_GEN_WORKFLOW.md`](../../IMAGE_GEN_WORKFLOW.md).
+
+**Prereqs (one of):**
+- `pip install fal-client pillow` + `fal-client login`  (preferred)
+- `export FAL_KEY=...` + `pip install requests pillow`  (REST fallback)
+
+**Run:**
+```bash
+# Curated 3:4 psychiatry set (768x1024), writes manifest.json
+./examples/generate_images.sh
+
+# Single image
+python3 scripts/image_gen.py \
+  --prompt "A calm psychiatric consultation room, warm window light" \
+  --name psychiatry_room --out generated_images \
+  --width 768 --height 1024
+```
+
+**FLUX call shape (fal_client):**
+```python
+import fal_client
+fal_client.run("fal-ai/flux/dev", arguments={
+    "prompt": prompt,
+    "image_size": {"width": 768, "height": 1024},
+    "num_images": 1,
+    "output_format": "png",
+    "enable_safety_checker": True,
+})
+```
+
+**Notes:**
+- Output is center-cropped to exact 768×1024 (3:4) by `ensure_crop()` regardless of what FLUX returns.
+- Prompts ending in "Centered composition, subject fully visible." survive the crop cleanly.
+- `prompts/psychiatry.tsv` holds the curated set: therapy session, mindfulness, neuroplasticity.
+- Billing: ~$0.025 / megapixel on fal.ai.
+
 #### Fast Mode (M1/M2)
 - Quantizes model to 4-bit on load
 - Much faster on M1/M2 GPUs

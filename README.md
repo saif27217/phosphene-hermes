@@ -37,24 +37,52 @@ curl -sSk -X POST \
   "$BASE_URL/queue/add"
 ```
 
+## Image Generation (FLUX.1 [dev] on fal.ai)
+
+Phosphene itself is a **video** engine (LTX 2.3). For static 3:4 portrait
+images we use a separate, purpose-built image model — **FLUX.1 [dev]** via
+fal.ai — which gives exact resolution control and clean frames. The full
+end-to-end pipeline lives in [`IMAGE_GEN_WORKFLOW.md`](./IMAGE_GEN_WORKFLOW.md).
+
+```bash
+# Generate the curated 3:4 psychiatry set (768x1024)
+./examples/generate_images.sh
+# → generated_images/*.png  +  generated_images/manifest.json
+```
+
+- `scripts/image_gen.py` — FLUX generator (fal_client or REST backend, auto-selected)
+- `prompts/psychiatry.tsv` — curated psychiatry / mental-health prompts
+- `examples/generate_images.sh` — one-command wrapper
+
+**Prereqs:** `pip install fal-client pillow` then `fal-client login`, **or**
+`export FAL_KEY=...` with `pip install requests pillow`.
+
 ## Repository Structure
 
 ```
 phosphene-hermes/
 ├── README.md                    # This file
+├── IMAGE_GEN_WORKFLOW.md        # FLUX.1 [dev] 3:4 image generation (end-to-end)
+├── IMAGE_TO_VIDEO_WORKFLOW.md   # Image → Video via Phosphene (LTX)
 ├── skills/
-│   └── phosphene-hermes.md      # Full API reference (Hermes skill)
+│   ├── phosphene-hermes.md      # Full API reference (Hermes skill)
+│   └── video-prompt-enhancer.md # Cinematic prompt framework
+├── prompts/
+│   └── psychiatry.tsv           # Curated 3:4 psychiatry image prompts
 ├── examples/
+│   ├── generate_images.sh       # FLUX image generation wrapper
 │   ├── quick-test.sh            # Minimal test video
 │   ├── landscape.sh             # High-quality landscape
 │   ├── portrait.sh              # Portrait video
 │   ├── batch-prompt.sh          # Batch generation
 │   ├── monitor.sh               # Wait for job completion
 │   └── download-all.sh          # Download all outputs
-└── scripts/
-    ├── generate.py              # Python wrapper for generation
-    ├── monitor.py               # Job monitoring script
-    └── upload-image.py          # Image upload helper
+├── scripts/
+│   ├── image_gen.py             # Python wrapper for FLUX image generation
+│   ├── generate.py              # Python wrapper for Phosphene video generation
+│   ├── monitor.py               # Job monitoring script
+│   └── upload-image.py          # Image upload helper
+└── generated_images/            # FLUX outputs (3:4 PNGs + manifest.json)
 ```
 
 ## API Endpoints
