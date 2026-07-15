@@ -11,10 +11,14 @@ for still images, driven through its REST API.
 > Same prompts, same 768×1024 output — different backend. Use the local one
 > when you want images generated on your own Mac (no cloud key, private).
 
-> **Why 3:4?** Requested by Sak. The Mac image endpoint always emits
-> **1280×720 (16:9)**, so the workflow **center-crops** the largest 3:4 window
-> and upscales to exact **768×1024**. The crop/upscale is done by the script,
-> so every output is guaranteed 3:4.
+> **Why 3:4?** Requested by Sak. The Mac image endpoint **honors the `aspect`
+> param** — `aspect=3:4` yields a **native 768×1024** image directly (verified
+> 2026-07-14: model `Runpod/FLUX.2-klein-4B-mflux-4bit`, output `768×1024`).
+> No cropping is needed. `scripts/local_image_gen.py` sets `aspect=3:4` on
+> submit; the built-in `ensure_crop()` is retained only as a safety net if the
+> endpoint ever returns a non-3:4 size. (`width`/`height` params are ignored —
+> aspect ratio drives the dimensions: `9:16`→720×1280, `1:1`→1024×1024,
+> `16:9`→1280×720.)
 
 ---
 
@@ -101,9 +105,12 @@ cover video modes). They are the contract `scripts/local_image_gen.py` relies on
 | Fact | Value |
 |------|-------|
 | Submit image job | `POST /queue/add` with `mode=image` (same endpoint as video) |
-| Size params | **Ignored** — output is always `1280×720` |
-| Aspect ratio param | Ignored |
-| Output filename | `cand_<rand>_mflux.png` (mflux = Apple FLUX port) |
+| **`aspect` param** | **Honored** — `aspect=3:4` → native `768×1024`; `9:16`→720×1280; `1:1`→1024×1024; `16:9`→1280×720 |
+| `width` / `height` params | **Ignored** — aspect ratio drives dimensions |
+| `seed` param | Honored (recorded per job; `-1` = random) |
+| `n` / `num_images` | Per job caps at 1; submit multiple jobs for a batch |
+| Model (auto) | `Runpod/FLUX.2-klein-4B-mflux-4bit` (mflux = Apple FLUX port) |
+| Output filename | `cand_<rand>_mflux.png` |
 | Download endpoint | `GET /image?path=<abs path>&v=<timestamp>` (**not** `/file`) |
 | `/file` endpoint | Video-only (returns 404 for images) |
 | TLS | Self-signed — accept with `verify=False` / `curl -k` |

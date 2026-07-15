@@ -147,9 +147,12 @@ def ensure_crop(image_bytes, width, height):
 def generate_one(name, prompt, base_url, out_dir, width, height):
     print(f"[submit] {name}: {prompt[:60]}...")
 
-    # 1. submit
+    # 1. submit  — `aspect` is HONORED (width/height are not). aspect=3:4 yields
+    # an exact 768x1024 native image, so ensure_crop() below is now a no-op
+    # safety net (only crops if the endpoint ever returns a non-3:4 size).
     resp = _post_form(f"{base_url}/queue/add",
-                      {"mode": "image", "prompt": prompt, "num_images": "1"},
+                      {"mode": "image", "prompt": prompt,
+                       "aspect": f"{width}:{height}", "n": "1", "seed": "-1"},
                       timeout=30)
     job = json.loads(resp)
     if not job.get("ok"):
