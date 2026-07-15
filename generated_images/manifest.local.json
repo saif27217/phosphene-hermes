@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-15T08:34:50.906241+00:00",
+  "generated_at": "2026-07-15T08:47:07.484788+00:00",
   "source": "phosphene-mac-mflux",
   "base_url": "https://macbook-pro.tailc4e23e.ts.net:8443",
   "native_size": "1280x720",
@@ -7,19 +7,18 @@
     "width": 768,
     "height": 1024
   },
-  "enhance": true,
+  "enhance": false,
   "images": [
     {
-      "name": "psychiatry_overcoming_anxiety",
-      "prompt": "[A person overcoming anxiety, calm and grounded], a clear and legible central subject, shot on Leica M11 with 35mm Summilux-M f/1.4, shallow depth of field, fine Kodak Portra 400 grain, organic color. muted editorial color grade, rendered as a tangible photograph with visible texture — photorealistic, emotionally resonant, not abstract or out of focus.",
-      "path": "generated_images/psychiatry_overcoming_anxiety.png",
+      "name": "psychiatry_cognitive_dissonance_optimized",
+      "prompt": "[Close-up cinematic portrait of a man in his early 30s caught mid-realization], eyebrows knitted, eyes wide with conflicted recognition, shot on Leica M11 with 35mm Summilux-M f/1.4, shallow depth of field, fine Kodak Portra 400 grain, organic color. In the foreground his face fills the frame; one hand rises toward warm amber key light on the left (desire, attachment), the other clenches in cool cyan rim light on the right (duty, doubt). The split is sharp, transitioning down the exact midline of his face. Muted teal-and-amber color grade, editorial magazine realism, rendered as a tangible photograph with visible skin texture, emotionally resonant.",
+      "path": "generated_images/psychiatry_cognitive_dissonance_optimized.png",
       "width": 768,
       "height": 1024,
-      "job_id": "j-19f64ea1844-020",
+      "job_id": "j-19f64f5559c-022",
       "source": "phosphene-mac-mflux",
       "native_size": "1280x720",
-      "base_url": "https://macbook-pro.tailc4e23e.ts.net:8443",
-      "enhanced_from": "a person overcoming anxiety, calm and grounded"
+      "base_url": "https://macbook-pro.tailc4e23e.ts.net:8443"
     }
   ]
 }

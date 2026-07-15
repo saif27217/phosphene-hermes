@@ -187,6 +187,46 @@ def _looks_enhanced(p):
     return hits >= 2 or len(p.split()) >= 25
 
 
+# Abstract/conceptual prompts the deterministic template CANNOT handle.
+# For these, the LLM (`image-prompt-enhancer` skill) must craft the prompt
+# (inventing the concept-specific visual metaphor) BEFORE submitting.
+_ABSTRACT_TERMS = (
+    "dissonance", "anxiety", "depression", "recovery", "trauma", "grief",
+    "overcoming", "healing", "relapse", "mindfulness", "addiction", "burnout",
+    "resilience", "isolation", "hope", "despair", "conflict", "inner",
+    "self", "identity", "freedom", "doubt", "regret", "acceptance",
+    "cognitive", "emotional", "mental", "psycholog", "therapy", "struggle",
+    "patient", "getting better", "better", "calm", "grounded", "peace",
+    "serenity", "tranquil", "clarity", "awakening", "transformation",
+)
+
+
+def is_abstract_concept(prompt):
+    """True if the prompt names an abstract/emotional/conceptual subject that
+    needs LLM-crafted metaphor rather than the template's literal expansion.
+
+    Detection is term-based (psychiatry/emotion vocabulary) — concrete objects
+    like 'a red apple' intentionally do NOT match and are treated as concrete.
+    """
+    p_low = prompt.lower()
+    return any(term in p_low for term in _ABSTRACT_TERMS)
+
+
+def warn_if_abstract_with_template(prompt):
+    """Enforce the routing rule: --enhance (template) on an abstract concept is
+    the wrong tool. Refuse and tell the caller to use the LLM skill instead."""
+    if is_abstract_concept(prompt) and not _looks_enhanced(prompt):
+        sys.stderr.write(
+            "WARNING: `--enhance` uses a deterministic template that CANNOT invent\n"
+            "the visual metaphor for abstract/conceptual prompts like this one.\n"
+            "Route abstract subjects through the `image-prompt-enhancer` skill\n"
+            "(LLM) to craft a structured FLUX prompt FIRST, then pass that prompt\n"
+            "without --enhance. Concrete subjects (e.g. 'a red apple') are fine.\n"
+        )
+        return False
+    return True
+
+
 # --------------------------------------------------------------------------- #
 # Submit + wait + download one image
 # --------------------------------------------------------------------------- #
@@ -311,6 +351,12 @@ def main():
     for name, prompt in items:
         final_prompt = prompt
         if args.enhance:
+            # ROUTING RULE: the template cannot invent metaphors for abstract
+            # concepts. Warn and refuse rather than emit a weak literal image.
+            if not warn_if_abstract_with_template(prompt):
+                print(f"[skip] {name}: abstract concept needs LLM "
+                      f"(image-prompt-enhancer skill) — not using --enhance template")
+                continue
             final_prompt = enhance_prompt(prompt, camera=args.camera,
                                           film=args.film, palette=args.palette)
             if final_prompt != prompt:

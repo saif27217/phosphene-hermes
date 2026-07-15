@@ -64,14 +64,21 @@ python3 scripts/local_image_gen.py \
 # Concrete subjects: deterministic FLUX-framework expansion (no LLM needed)
 python3 scripts/local_image_gen.py --enhance --prompt "a red apple on white"
 
-# Abstract/conceptual subjects (cognitive dissonance, patient getting better):
-# enhance with the `image-prompt-enhancer` skill first, or pass a structured prompt.
-# `--enhance` auto-skips prompts that already look enhanced.
+# Abstract/conceptual subjects: the template CANNOT invent the visual metaphor.
+# Route them through the `image-prompt-enhancer` skill (LLM) FIRST to craft a
+# structured FLUX prompt, then submit WITHOUT --enhance:
+python3 scripts/local_image_gen.py --prompt "[Close-up portrait of a man mid-realization] shot on Leica M11... split warm/cool lighting..." --name foo
+# The script REFUSES (warns + skips) if you pass --enhance on an abstract concept.
 ```
-**Caveat (verified live 2026-07-14):** the template-based `--enhance` cannot
-invent concept-specific visual metaphors for abstract prompts — an LLM is
-required. For those, let the agent expand via `image-prompt-enhancer` before
-submitting.
+**Routing rule (enforced in code):** `--enhance` is for **concrete subjects**
+only ("a red apple"). For **abstract/conceptual** prompts (cognitive dissonance,
+patient getting better, anxiety, recovery, grief, etc.) the deterministic template
+cannot invent the concept-specific metaphor — the LLM (`image-prompt-enhancer`
+skill) must craft the prompt first. `local_image_gen.py` detects abstract concepts
+and **warns + skips** them when `--enhance` is set, telling you to use the skill.
+Verified live 2026-07-14: `--enhance` on "cognitive dissonance" yielded a clean
+but metaphor-free portrait; the LLM-crafted prompt produced the split-light
+conflict metaphor.
 
 ### Different Mac host
 ```bash
