@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-15T10:22:34.560552+00:00",
+  "generated_at": "2026-07-15T10:40:21.505501+00:00",
   "source": "phosphene-mac-mflux",
   "base_url": "https://macbook-pro.tailc4e23e.ts.net:8443",
   "native_size": "1280x720",
@@ -11,7 +11,7 @@
   "images": [
     {
       "name": "psychiatry_dissonance_all_three",
-      "prompt": "[Medium shot, waist-up, of ONE person at a cluttered desk caught in self-justification], left hand holds a lit cigarette with a calm half-smile, gaze darting from a glowing phone, fingers flick a tiny plastic bottle toward a bin with a shrug. Split warm amber and cool cyan down the midline. Leica M11 35mm, Kodak Portra 400, no text.",
+      "prompt": "a man at a desk, one hand holding a lit cigarette near his lips with a calm self-satisfied smile, eyes glancing away from a bright phone screen in his other hand. the left half of his face warm amber, the right half cool cyan. photographic portrait, film grain",
       "path": "generated_images/psychiatry_dissonance_all_three.png",
       "width": 768,
       "height": 1024,

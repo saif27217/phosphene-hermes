@@ -240,14 +240,17 @@ def warn_if_abstract_with_template(prompt):
 # --------------------------------------------------------------------------- #
 def generate_one(name, prompt, base_url, out_dir, width, height):
     """Submit one image job, retry once with a SIMPLER prompt if the endpoint
-    returns a non-3:4 size (it honors explicit width/height for simple prompts
-    but falls back to 1280x720 for some complex ones — cropping that to 3:4
-    zooms the subject). Crop only as a last resort."""
+    returns a non-3:4 size. The endpoint force-outputs native 768x1024 when a
+    portrait signal is present: `aspect=9:16` (the panel's "vertical" value)
+    reliably yields 3:4, as do explicit `width=768&height=1024`. Some complex
+    prompts with heavy FLUX-framework dressing still fall back to 1280x720, so
+    crop is kept as a last resort. Crop only fires on that rare fallback."""
     print(f"[submit] {name}: {prompt[:60]}...")
 
     def _run(p, attempt):
         resp = _post_form(f"{base_url}/queue/add",
                           {"mode": "image", "prompt": p,
+                           "aspect": "9:16",
                            "width": str(width), "height": str(height),
                            "n": "1", "seed": "-1"},
                           timeout=30)
@@ -300,16 +303,43 @@ def generate_one(name, prompt, base_url, out_dir, width, height):
 
     # 1st attempt (full prompt)
     raw, iw, ih = _run(prompt, 0)
-    if (iw, ih) != (width, height):
-        # retry with a simplified prompt to coax native 3:4
+    # Accept the returned image unless it's a LANDSCAPE that isn't ~3:4:
+    #  - portrait returns (ih >= iw, e.g. 720x1280 / 768x1024) are fine -> resize
+    #  - landscape 3:4 (1280x720, ratio 0.75) is fine -> center-crop
+    #  - anything else (e.g. square, wrongly-oriented) -> retry once, then crop
+    TOL = 0.05
+    is_portrait = ih >= iw
+    ratio_ok = is_portrait or abs(iw / ih - width / height) <= TOL
+    if ratio_ok:
+        if (iw, ih) != (width, height):
+            if Image is None:
+                sys.stderr.write(
+                    f"WARNING: endpoint returned {iw}x{ih} (~3:4) but Pillow is "
+                    "missing to resize to exact target. Saving raw.\n")
+            else:
+                print(f"        resize {iw}x{ih} -> {width}x{height} (portrait/3:4, no side-crop)")
+                raw = ensure_crop(raw, width, height)
+                iw, ih = png_size(raw)
+    else:
+        # ratio genuinely wrong — retry once with a simpler prompt
         simple = _simplify_prompt(prompt)
         if simple and simple != prompt:
-            print(f"        endpoint returned {iw}x{ih} (not 3:4); retrying with simpler prompt")
+            print(f"        endpoint returned {iw}x{ih} (ratio off); retrying with simpler prompt")
             try:
                 raw, iw, ih = _run(simple, 1)
             except Exception as e:
                 print(f"        retry failed ({e}); will crop the first result")
-        if (iw, ih) != (width, height):
+        is_portrait = ih >= iw
+        ratio_ok = is_portrait or abs(iw / ih - width / height) <= TOL
+        if ratio_ok:
+            if (iw, ih) != (width, height):
+                if Image is None:
+                    sys.stderr.write(f"WARNING: Pillow missing to resize {iw}x{ih}.\n")
+                else:
+                    print(f"        resize {iw}x{ih} -> {width}x{height}")
+                    raw = ensure_crop(raw, width, height)
+                    iw, ih = png_size(raw)
+        else:
             if Image is None:
                 sys.stderr.write(
                     f"WARNING: endpoint returned {iw}x{ih}, not 3:4, and Pillow is "

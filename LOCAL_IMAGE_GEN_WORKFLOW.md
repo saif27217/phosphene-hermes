@@ -11,18 +11,14 @@ for still images, driven through its REST API.
 > Same prompts, same 768×1024 output — different backend. Use the local one
 > when you want images generated on your own Mac (no cloud key, private).
 
-> **Why 3:4?** Requested by Sak. The script submits **explicit
-> `width=768&height=1024`** (NOT `aspect`, which is unreliable). The endpoint
-> **honors `width`/`height` for simple prompts** and returns native **768×1024**
-> (verified 2026-07-15). For SOME complex prompts it falls back to **1280×720**,
-> so the script **retries once with a simplified prompt** (strips `[bracketed]`
-> notes, shortens to ~2 sentences) to coax native 3:4. Crop is only a last
-> resort when even the retry returns non-3:4. No PIL needed in the common case.
->
-> **Note on "zoom":** the over-zoomed look came from cropping 1280×720→768×1024
-> on the fallback path. The retry-with-simpler-prompt strategy now avoids that for
-> most complex prompts. If a crop still happens, phrase prompts with looser framing
-> ("medium shot", "waist up", environmental context) so FLUX leaves breathing room.
+> **Why 3:4?** Requested by Sak. The script sends **`aspect=9:16`** (the panel's
+> "vertical" value), which RELIABLY makes the endpoint emit a 3:4 image
+> (verified 2026-07-15: `aspect=9:16` / `aspect=portrait` returned 768×1024 or
+> 720×1280 — both 3:4). The endpoint may return 768×1024, 720×1280 (portrait),
+> or 1280×720 (landscape); the script accepts any ~3:4 ratio and resizes to
+> exact 768×1024. Retry (simpler prompt) + crop only fire if the ratio is
+> genuinely off. No side-cutting zoom — portrait returns are resized, not
+> center-cropped.
 ---
 
 ## 1. Prerequisites
