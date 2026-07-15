@@ -188,9 +188,11 @@ def _looks_enhanced(p):
 def generate_one(name, prompt, base_url, out_dir, width, height):
     print(f"[submit] {name}: {prompt[:60]}...")
 
-    # 1. submit  — `aspect` is HONORED (width/height are not). aspect=3:4 yields
-    # an exact 768x1024 native image, so ensure_crop() below is now a no-op
-    # safety net (only crops if the endpoint ever returns a non-3:4 size).
+    # 1. submit  — NOTE: the endpoint IGNORES `aspect`/`width`/`height` for
+    # image mode and ALWAYS returns 1280x720. `ensure_crop()` below is what
+    # actually delivers the requested 3:4 (768x1024) by center-cropping the
+    # 1280x720 output. Requires Pillow; if PIL is missing the crop is skipped
+    # and the raw 1280x720 landscape is saved (a real, not honored, size).
     resp = _post_form(f"{base_url}/queue/add",
                       {"mode": "image", "prompt": prompt,
                        "aspect": f"{width}:{height}", "n": "1", "seed": "-1"},

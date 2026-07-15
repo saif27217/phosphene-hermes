@@ -598,9 +598,15 @@ for o in data['outputs']:
 | Quality | `V4_QUALITY_48` | 48 | Slow |
 
 #### Image Aspect Ratios
-| Ratio | Value | Resolution |
+> **NOTE:** The image endpoint **ignores the `aspect` param** and always returns
+> **1280×720**. The 3:4 (768×1024) output is produced by the client-side
+> `ensure_crop()` in `scripts/local_image_gen.py` (requires Pillow). The table
+> below shows what `ensure_crop` *targets* for each requested ratio, not what the
+> endpoint emits.
+
+| Ratio | Value | Crop target (client-side) |
 |-------|-------|------------|
-| 16:9 | `16:9` | 1280×720 |
+| 16:9 | `16:9` | 1280×720 (no crop needed) |
 | 4:3 | `4:3` | 1024×768 |
 | 1:1 | `1:1` | 1024×1024 |
 | 9:16 | `9:16` | 720×1280 |

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-15T07:19:17.845381+00:00",
+  "generated_at": "2026-07-15T08:09:08.885544+00:00",
   "source": "phosphene-mac-mflux",
   "base_url": "https://macbook-pro.tailc4e23e.ts.net:8443",
   "native_size": "1280x720",
@@ -10,12 +10,12 @@
   "enhance": true,
   "images": [
     {
-      "name": "psychiatry_cognitive_dissonance_enhanced",
+      "name": "psychiatry_cognitive_dissonance_enhanced2",
       "prompt": "[Cognitive dissonance], a clear and legible central subject, shot on Leica M11 with 35mm Summilux-M f/1.4, shallow depth of field, fine Kodak Portra 400 grain, organic color. muted editorial color grade, rendered as a tangible photograph with visible texture — photorealistic, emotionally resonant, not abstract or out of focus.",
-      "path": "generated_images/psychiatry_cognitive_dissonance_enhanced.png",
+      "path": "generated_images/psychiatry_cognitive_dissonance_enhanced2.png",
       "width": 768,
       "height": 1024,
-      "job_id": "j-19f64a4ece7-016",
+      "job_id": "j-19f64d290d0-019",
       "source": "phosphene-mac-mflux",
       "native_size": "1280x720",
       "base_url": "https://macbook-pro.tailc4e23e.ts.net:8443",

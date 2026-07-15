@@ -11,14 +11,12 @@ for still images, driven through its REST API.
 > Same prompts, same 768×1024 output — different backend. Use the local one
 > when you want images generated on your own Mac (no cloud key, private).
 
-> **Why 3:4?** Requested by Sak. The Mac image endpoint **honors the `aspect`
-> param** — `aspect=3:4` yields a **native 768×1024** image directly (verified
-> 2026-07-14: model `Runpod/FLUX.2-klein-4B-mflux-4bit`, output `768×1024`).
-> No cropping is needed. `scripts/local_image_gen.py` sets `aspect=3:4` on
-> submit; the built-in `ensure_crop()` is retained only as a safety net if the
-> endpoint ever returns a non-3:4 size. (`width`/`height` params are ignored —
-> aspect ratio drives the dimensions: `9:16`→720×1280, `1:1`→1024×1024,
-> `16:9`→1280×720.)
+> **Why 3:4?** Requested by Sak. The Mac image endpoint **IGNORES `aspect`/`width`/
+> `height`** for image mode and **always returns 1280×720**. The 3:4 (768×1024)
+> size is produced by `scripts/local_image_gen.py`'s `ensure_crop()`, which
+> center-crops the 1280×720 output. **Requires Pillow** — if PIL is missing the
+> crop is skipped and the raw 1280×720 landscape is saved. (The `aspect` param is
+> still submitted but has no effect; do not rely on it.)
 
 ---
 
