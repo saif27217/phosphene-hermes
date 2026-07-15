@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-15T08:47:07.484788+00:00",
+  "generated_at": "2026-07-15T09:24:08.471814+00:00",
   "source": "phosphene-mac-mflux",
   "base_url": "https://macbook-pro.tailc4e23e.ts.net:8443",
   "native_size": "1280x720",
@@ -10,14 +10,14 @@
   "enhance": false,
   "images": [
     {
-      "name": "psychiatry_cognitive_dissonance_optimized",
-      "prompt": "[Close-up cinematic portrait of a man in his early 30s caught mid-realization], eyebrows knitted, eyes wide with conflicted recognition, shot on Leica M11 with 35mm Summilux-M f/1.4, shallow depth of field, fine Kodak Portra 400 grain, organic color. In the foreground his face fills the frame; one hand rises toward warm amber key light on the left (desire, attachment), the other clenches in cool cyan rim light on the right (duty, doubt). The split is sharp, transitioning down the exact midline of his face. Muted teal-and-amber color grade, editorial magazine realism, rendered as a tangible photograph with visible skin texture, emotionally resonant.",
-      "path": "generated_images/psychiatry_cognitive_dissonance_optimized.png",
+      "name": "test_native_3to4",
+      "prompt": "[Close-up portrait of a person mid-thought] split warm amber left cool cyan right, hand at temple, neural filaments rewiring the seam, Leica M11 35mm, Kodak Portra 400, tangible photograph",
+      "path": "generated_images/test_native_3to4.png",
       "width": 768,
       "height": 1024,
-      "job_id": "j-19f64f5559c-022",
+      "job_id": "j-19f6517395c-036",
       "source": "phosphene-mac-mflux",
-      "native_size": "1280x720",
+      "native_size": "768x1024",
       "base_url": "https://macbook-pro.tailc4e23e.ts.net:8443"
     }
   ]

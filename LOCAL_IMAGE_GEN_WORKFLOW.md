@@ -11,13 +11,18 @@ for still images, driven through its REST API.
 > Same prompts, same 768×1024 output — different backend. Use the local one
 > when you want images generated on your own Mac (no cloud key, private).
 
-> **Why 3:4?** Requested by Sak. The Mac image endpoint **IGNORES `aspect`/`width`/
-> `height`** for image mode and **always returns 1280×720**. The 3:4 (768×1024)
-> size is produced by `scripts/local_image_gen.py`'s `ensure_crop()`, which
-> center-crops the 1280×720 output. **Requires Pillow** — if PIL is missing the
-> crop is skipped and the raw 1280×720 landscape is saved. (The `aspect` param is
-> still submitted but has no effect; do not rely on it.)
-
+> **Why 3:4?** Requested by Sak. The Mac image endpoint **accepts `aspect=3:4`**
+> and *usually* returns native **768×1024** — but it is **non-deterministic**:
+> some jobs return **1280×720** instead (verified 2026-07-15: same prompt +
+> same param gave both sizes across runs). So `scripts/local_image_gen.py`
+> **passes native 768×1024 through untouched** (no zoom) and **only crops when
+> the endpoint returns a non-3:4 size**. Pillow is required *only* for that
+> fallback crop; when the endpoint honors 3:4, no PIL/crop is involved.
+>
+> **Note on "zoom":** the over-zoomed look came from cropping 1280×720→768×1024
+> on the jobs where the endpoint returned landscape. To minimize that, phrase
+> prompts with looser framing (e.g. "medium shot", "waist up", environmental
+> context) so FLUX composes with breathing room rather than a tight headshot.
 ---
 
 ## 1. Prerequisites

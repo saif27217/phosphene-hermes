@@ -43,28 +43,27 @@ import datetime as dt
 import io
 import json
 import os
+import struct
 import sys
 import time
 import urllib.parse
 import urllib.request
 
-try:
-    from PIL import Image
-    from PIL.Image import LANCZOS  # type: ignore[attr-defined]
-except ImportError:
-    # Crop-to-3:4 is REQUIRED (endpoint returns 1280x720). Fail loudly rather
-    # than silently saving a landscape image.
-    sys.stderr.write(
-        "ERROR: Pillow is required for ensure_crop() (3:4 output).\n"
-        "Install it:  python3 -m pip install --user pillow\n"
-        "             (or: uv pip install pillow)\n"
-    )
-    sys.exit(2)
-
 DEFAULT_BASE = "https://macbook-pro.tailc4e23e.ts.net:8443"
 DEFAULT_W, DEFAULT_H = 768, 1024
 POLL_INTERVAL = 8        # seconds
 TIMEOUT = 600            # max seconds to wait for one job
+
+# Optional: Pillow is only needed to CROP when the endpoint returns a
+# non-3:4 image. The endpoint usually honors aspect=3:4 (native 768x1024) but
+# is non-deterministic — sometimes returns 1280x720, which must be cropped to
+# 3:4. When it returns 768x1024 natively, we pass it through untouched (no zoom).
+try:
+    from PIL import Image
+    from PIL.Image import LANCZOS  # type: ignore[attr-defined]
+except ImportError:
+    Image = None
+    LANCZOS = None
 
 
 # --------------------------------------------------------------------------- #
@@ -128,14 +127,23 @@ def _get_bytes(url, timeout=120):
 
 
 # --------------------------------------------------------------------------- #
-# Crop -> exact 3:4
+# Native size reader (no PIL needed — endpoint emits native 3:4)
 # --------------------------------------------------------------------------- #
+def png_size(image_bytes):
+    """Return (width, height) from a PNG's IHDR chunk."""
+    if image_bytes[:4] != b"\x89PNG":
+        raise RuntimeError("not a PNG")
+    return struct.unpack(">II", image_bytes[16:24])
+
+
 def ensure_crop(image_bytes, width, height):
-    # PIL is required (see import above); if missing the script already exits.
+    """Center-crop to exact (width, height). Requires Pillow; if missing,
+    returns the raw bytes (caller should warn). No-op if already sized."""
+    if Image is None:
+        return image_bytes
     im = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     if (im.width, im.height) == (width, height):
-        out = io.BytesIO(); im.save(out, format="PNG"); return out.getvalue()
-    # largest 3:4 window centered, then resize to target
+        return image_bytes
     cw = min(im.width, int(round(im.height * width / height)))
     ch = min(im.height, int(round(cw * height / width)))
     left = (im.width - cw) // 2
@@ -233,11 +241,10 @@ def warn_if_abstract_with_template(prompt):
 def generate_one(name, prompt, base_url, out_dir, width, height):
     print(f"[submit] {name}: {prompt[:60]}...")
 
-    # 1. submit  — NOTE: the endpoint IGNORES `aspect`/`width`/`height` for
-    # image mode and ALWAYS returns 1280x720. `ensure_crop()` below is what
-    # actually delivers the requested 3:4 (768x1024) by center-cropping the
-    # 1280x720 output. Requires Pillow; if PIL is missing the crop is skipped
-    # and the raw 1280x720 landscape is saved (a real, not honored, size).
+    # 1. submit  — the endpoint HONORS `aspect` for image mode and returns a
+    # NATIVE 3:4 (768x1024) PNG (verified 2026-07-15: aspect=3:4, 16:9, and a
+    # psychiatry prompt all returned 768x1024). The downloaded bytes are saved
+    # as-is — no cropping, which previously over-zoomed the subject.
     resp = _post_form(f"{base_url}/queue/add",
                       {"mode": "image", "prompt": prompt,
                        "aspect": f"{width}:{height}", "n": "1", "seed": "-1"},
@@ -295,16 +302,29 @@ def generate_one(name, prompt, base_url, out_dir, width, height):
     if raw_bytes[:4] != b"\x89PNG":
         raise RuntimeError(f"download did not return a PNG for {url}: {raw_bytes[:40]!r}")
 
-    raw_bytes = ensure_crop(raw_bytes, width, height)
+    # The endpoint usually returns NATIVE 3:4 (768x1024) for aspect=3:4, but is
+    # non-deterministic (some jobs return 1280x720). Pass native bytes through
+    # untouched when already 3:4 (no zoom); only crop when a non-3:4 size arrives.
+    iw, ih = png_size(raw_bytes)
+    if (iw, ih) != (width, height):
+        if Image is None:
+            sys.stderr.write(
+                f"WARNING: endpoint returned {iw}x{ih}, not 3:4, and Pillow is "
+                "missing to crop it. Saving raw (non-3:4). Install: uv pip install pillow\n"
+            )
+        else:
+            print(f"        crop {iw}x{ih} -> {width}x{height} (endpoint returned non-3:4)")
+        raw_bytes = ensure_crop(raw_bytes, width, height)
+        iw, ih = png_size(raw_bytes)
     path = os.path.join(out_dir, f"{name}.png")
     with open(path, "wb") as fh:
         fh.write(raw_bytes)
-    print(f"[ok ] saved {path} ({width}x{height})")
+    print(f"[ok ] saved {path} ({iw}x{ih})")
     return path, {
         "name": name, "prompt": prompt, "path": path,
-        "width": width, "height": height,
+        "width": iw, "height": ih,
         "job_id": job_id, "source": "phosphene-mac-mflux",
-        "native_size": "1280x720", "base_url": base_url,
+        "native_size": f"{iw}x{ih}", "base_url": base_url,
     }
 
 
