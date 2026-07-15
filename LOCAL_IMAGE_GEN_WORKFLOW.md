@@ -61,6 +61,20 @@ python3 scripts/local_image_gen.py \
   --out generated_images
 ```
 
+### Prompt enhancement (`--enhance`)
+```bash
+# Concrete subjects: deterministic FLUX-framework expansion (no LLM needed)
+python3 scripts/local_image_gen.py --enhance --prompt "a red apple on white"
+
+# Abstract/conceptual subjects (cognitive dissonance, patient getting better):
+# enhance with the `image-prompt-enhancer` skill first, or pass a structured prompt.
+# `--enhance` auto-skips prompts that already look enhanced.
+```
+**Caveat (verified live 2026-07-14):** the template-based `--enhance` cannot
+invent concept-specific visual metaphors for abstract prompts — an LLM is
+required. For those, let the agent expand via `image-prompt-enhancer` before
+submitting.
+
 ### Different Mac host
 ```bash
 BASE_URL=https://other-host.tailc4e23e.ts.net:8443 \

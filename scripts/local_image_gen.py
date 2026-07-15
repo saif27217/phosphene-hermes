@@ -142,6 +142,47 @@ def ensure_crop(image_bytes, width, height):
 
 
 # --------------------------------------------------------------------------- #
+# Prompt enhancement — FLUX framework (image-prompt-enhancer skill)
+# Deterministic, template-based: no LLM/API needed. Implements the 7 levers:
+#   1. bracket the subject+action  2. full camera rig  3. layered composition
+#   4. explicit contrast transition 5. film-stock token 6. hex colors (optional)
+#   7. positive-only (FLUX has no negative-prompt support)
+# If the prompt already looks enhanced (has brackets / camera rig / is long),
+# it is returned unchanged to avoid double-processing.
+# --------------------------------------------------------------------------- #
+def enhance_prompt(concept, camera=None, film=None, palette=None):
+    """Expand a bare concept into a structured FLUX prompt.
+
+    KEY RULE (learned 2026-07-14 live test): never replace the subject with
+    generic "foreground/background environment" filler — FLUX then renders an
+    abstract blur instead of the subject. Keep the *concept as the literal
+    subject*, bracket it, and only append photographic-quality levers.
+    """
+    concept = concept.strip()
+    if _looks_enhanced(concept):
+        return concept
+    camera = camera or "Leica M11 with 35mm Summilux-M f/1.4"
+    film = film or "fine Kodak Portra 400 grain, organic color"
+    palette = palette or "muted editorial color grade"
+    subject = concept if concept.startswith("[") else f"[{concept[0].upper()}{concept[1:]}]"
+    return (
+        f"{subject}, a clear and legible central subject, shot on {camera}, "
+        f"shallow depth of field, {film}. {palette}, rendered as a tangible "
+        f"photograph with visible texture — photorealistic, emotionally resonant, "
+        f"not abstract or out of focus."
+    )
+
+
+def _looks_enhanced(p):
+    """Heuristic: skip enhancement if prompt already structured."""
+    p_low = p.lower()
+    signals = ["shot on", "f/", "mm", "bracket", "[", "kodak", "portra",
+               "depth of field", "foreground", "background", "color grade"]
+    hits = sum(1 for s in signals if s in p_low)
+    return hits >= 2 or len(p.split()) >= 25
+
+
+# --------------------------------------------------------------------------- #
 # Submit + wait + download one image
 # --------------------------------------------------------------------------- #
 def generate_one(name, prompt, base_url, out_dir, width, height):
@@ -230,6 +271,12 @@ def main():
     ap.add_argument("--base-url", default=DEFAULT_BASE)
     ap.add_argument("--width", type=int, default=DEFAULT_W)
     ap.add_argument("--height", type=int, default=DEFAULT_H)
+    ap.add_argument("--enhance", action="store_true",
+                    help="expand bare concepts through the FLUX framework "
+                         "(image-prompt-enhancer skill) before submitting")
+    ap.add_argument("--camera", help="camera rig override for --enhance")
+    ap.add_argument("--film", help="film-stock token override for --enhance")
+    ap.add_argument("--palette", help="color palette override for --enhance")
     args = ap.parse_args()
 
     if not args.prompt and not args.prompts:
@@ -251,10 +298,19 @@ def main():
         "base_url": args.base_url,
         "native_size": "1280x720",
         "default_size": {"width": args.width, "height": args.height},
+        "enhance": args.enhance,
         "images": [],
     }
     for name, prompt in items:
-        p, meta = generate_one(name, prompt, args.base_url, args.out, args.width, args.height)
+        final_prompt = prompt
+        if args.enhance:
+            final_prompt = enhance_prompt(prompt, camera=args.camera,
+                                          film=args.film, palette=args.palette)
+            if final_prompt != prompt:
+                print(f"[enhance] {prompt!r}\n        -> {final_prompt!r}")
+        p, meta = generate_one(name, final_prompt, args.base_url, args.out, args.width, args.height)
+        if args.enhance:
+            meta["enhanced_from"] = prompt
         manifest["images"].append(meta)
 
     mp = os.path.join(args.out, "manifest.local.json")
