@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-15T09:24:08.471814+00:00",
+  "generated_at": "2026-07-15T10:22:34.560552+00:00",
   "source": "phosphene-mac-mflux",
   "base_url": "https://macbook-pro.tailc4e23e.ts.net:8443",
   "native_size": "1280x720",
@@ -10,12 +10,12 @@
   "enhance": false,
   "images": [
     {
-      "name": "test_native_3to4",
-      "prompt": "[Close-up portrait of a person mid-thought] split warm amber left cool cyan right, hand at temple, neural filaments rewiring the seam, Leica M11 35mm, Kodak Portra 400, tangible photograph",
-      "path": "generated_images/test_native_3to4.png",
+      "name": "psychiatry_dissonance_all_three",
+      "prompt": "[Medium shot, waist-up, of ONE person at a cluttered desk caught in self-justification], left hand holds a lit cigarette with a calm half-smile, gaze darting from a glowing phone, fingers flick a tiny plastic bottle toward a bin with a shrug. Split warm amber and cool cyan down the midline. Leica M11 35mm, Kodak Portra 400, no text.",
+      "path": "generated_images/psychiatry_dissonance_all_three.png",
       "width": 768,
       "height": 1024,
-      "job_id": "j-19f6517395c-036",
+      "job_id": null,
       "source": "phosphene-mac-mflux",
       "native_size": "768x1024",
       "base_url": "https://macbook-pro.tailc4e23e.ts.net:8443"

@@ -239,93 +239,112 @@ def warn_if_abstract_with_template(prompt):
 # Submit + wait + download one image
 # --------------------------------------------------------------------------- #
 def generate_one(name, prompt, base_url, out_dir, width, height):
+    """Submit one image job, retry once with a SIMPLER prompt if the endpoint
+    returns a non-3:4 size (it honors explicit width/height for simple prompts
+    but falls back to 1280x720 for some complex ones — cropping that to 3:4
+    zooms the subject). Crop only as a last resort."""
     print(f"[submit] {name}: {prompt[:60]}...")
 
-    # 1. submit  — the endpoint HONORS `aspect` for image mode and returns a
-    # NATIVE 3:4 (768x1024) PNG (verified 2026-07-15: aspect=3:4, 16:9, and a
-    # psychiatry prompt all returned 768x1024). The downloaded bytes are saved
-    # as-is — no cropping, which previously over-zoomed the subject.
-    resp = _post_form(f"{base_url}/queue/add",
-                      {"mode": "image", "prompt": prompt,
-                       "aspect": f"{width}:{height}", "n": "1", "seed": "-1"},
-                      timeout=30)
-    job = json.loads(resp)
-    if not job.get("ok"):
-        raise RuntimeError(f"submit failed: {resp}")
-    job_id = job["id"]
-    print(f"        job {job_id}")
-
-    # 2. poll /status until not running
-    deadline = time.time() + TIMEOUT
-    while time.time() < deadline:
-        st = json.loads(_http("GET", f"{base_url}/status", timeout=20))
-        cur = st.get("current")
-        running = st.get("running")
-        if not running:
-            break
-        pct = ""
-        if isinstance(cur, dict) and cur.get("progress"):
-            pct = f" {cur['progress'].get('pct')}% {cur['progress'].get('phase_label','')}"
-        print(f"        ...running{pct}", flush=True)
-        time.sleep(POLL_INTERVAL)
-    else:
-        raise TimeoutError(f"job {job_id} did not finish in {TIMEOUT}s")
-
-    # 3. find our output_path in history
-    st = json.loads(_http("GET", f"{base_url}/status", timeout=20))
-    out_path = None
-    for h in st.get("history", []):
-        if job_id in str(h.get("id", "")):
-            out_path = h.get("output_path")
-            if h.get("status") != "done":
-                raise RuntimeError(f"job {job_id} status={h.get('status')} error={h.get('error')}")
-            break
-    if not out_path:
-        raise RuntimeError(f"output_path not found for job {job_id}")
-    print(f"        output: {out_path}")
-
-    # 4. resolve download URL from /outputs
-    outs = json.loads(_http("GET", f"{base_url}/outputs?limit=50", timeout=20))
-    url = None
-    for o in outs.get("outputs", []):
-        if o.get("path") == out_path:
-            url = o.get("url")
-            break
-    if not url:
-        # fallback: build /image url with v=timestamp from path mtime
-        ts = str(int(time.time()))
-        url = f"/image?path={urllib.parse.quote(out_path)}&v={ts}"
-    print(f"        download {url}")
-
-    # 5. download PNG (binary — must not decode/re-encode)
-    raw_bytes = _get_bytes(f"{base_url}{url}", timeout=120)
-    if raw_bytes[:4] != b"\x89PNG":
-        raise RuntimeError(f"download did not return a PNG for {url}: {raw_bytes[:40]!r}")
-
-    # The endpoint usually returns NATIVE 3:4 (768x1024) for aspect=3:4, but is
-    # non-deterministic (some jobs return 1280x720). Pass native bytes through
-    # untouched when already 3:4 (no zoom); only crop when a non-3:4 size arrives.
-    iw, ih = png_size(raw_bytes)
-    if (iw, ih) != (width, height):
-        if Image is None:
-            sys.stderr.write(
-                f"WARNING: endpoint returned {iw}x{ih}, not 3:4, and Pillow is "
-                "missing to crop it. Saving raw (non-3:4). Install: uv pip install pillow\n"
-            )
+    def _run(p, attempt):
+        resp = _post_form(f"{base_url}/queue/add",
+                          {"mode": "image", "prompt": p,
+                           "width": str(width), "height": str(height),
+                           "n": "1", "seed": "-1"},
+                          timeout=30)
+        job = json.loads(resp)
+        if not job.get("ok"):
+            raise RuntimeError(f"submit failed: {resp}")
+        job_id = job["id"]
+        print(f"        job {job_id}" + (f"  [retry simple prompt]" if attempt else ""))
+        # poll
+        deadline = time.time() + TIMEOUT
+        while time.time() < deadline:
+            st = json.loads(_http("GET", f"{base_url}/status", timeout=20))
+            cur = st.get("current")
+            running = st.get("running")
+            if not running:
+                break
+            pct = ""
+            if isinstance(cur, dict) and cur.get("progress"):
+                pct = f" {cur['progress'].get('pct')}% {cur['progress'].get('phase_label','')}"
+            print(f"        ...running{pct}", flush=True)
+            time.sleep(POLL_INTERVAL)
         else:
-            print(f"        crop {iw}x{ih} -> {width}x{height} (endpoint returned non-3:4)")
-        raw_bytes = ensure_crop(raw_bytes, width, height)
-        iw, ih = png_size(raw_bytes)
+            raise TimeoutError(f"job {job_id} did not finish in {TIMEOUT}s")
+        # find output_path
+        st = json.loads(_http("GET", f"{base_url}/status", timeout=20))
+        out_path = None
+        for h in st.get("history", []):
+            if job_id in str(h.get("id", "")):
+                out_path = h.get("output_path")
+                if h.get("status") != "done":
+                    raise RuntimeError(f"job {job_id} status={h.get('status')} error={h.get('error')}")
+                break
+        if not out_path:
+            raise RuntimeError(f"output_path not found for job {job_id}")
+        print(f"        output: {out_path}")
+        outs = json.loads(_http("GET", f"{base_url}/outputs?limit=50", timeout=20))
+        url = None
+        for o in outs.get("outputs", []):
+            if o.get("path") == out_path:
+                url = o.get("url"); break
+        if not url:
+            ts = str(int(time.time()))
+            url = f"/image?path={urllib.parse.quote(out_path)}&v={ts}"
+        print(f"        download {url}")
+        raw = _get_bytes(f"{base_url}{url}", timeout=120)
+        if raw[:4] != b"\x89PNG":
+            raise RuntimeError(f"download did not return a PNG for {url}: {raw[:40]!r}")
+        iw, ih = png_size(raw)
+        return raw, iw, ih
+
+    # 1st attempt (full prompt)
+    raw, iw, ih = _run(prompt, 0)
+    if (iw, ih) != (width, height):
+        # retry with a simplified prompt to coax native 3:4
+        simple = _simplify_prompt(prompt)
+        if simple and simple != prompt:
+            print(f"        endpoint returned {iw}x{ih} (not 3:4); retrying with simpler prompt")
+            try:
+                raw, iw, ih = _run(simple, 1)
+            except Exception as e:
+                print(f"        retry failed ({e}); will crop the first result")
+        if (iw, ih) != (width, height):
+            if Image is None:
+                sys.stderr.write(
+                    f"WARNING: endpoint returned {iw}x{ih}, not 3:4, and Pillow is "
+                    "missing to crop it. Saving raw (non-3:4). Install: uv pip install pillow\n")
+            else:
+                print(f"        crop {iw}x{ih} -> {width}x{height} (endpoint returned non-3:4)")
+            raw = ensure_crop(raw, width, height)
+            iw, ih = png_size(raw)
+
     path = os.path.join(out_dir, f"{name}.png")
     with open(path, "wb") as fh:
-        fh.write(raw_bytes)
+        fh.write(raw)
     print(f"[ok ] saved {path} ({iw}x{ih})")
     return path, {
         "name": name, "prompt": prompt, "path": path,
         "width": iw, "height": ih,
-        "job_id": job_id, "source": "phosphene-mac-mflux",
+        "job_id": None, "source": "phosphene-mac-mflux",
         "native_size": f"{iw}x{ih}", "base_url": base_url,
     }
+
+
+def _simplify_prompt(prompt):
+    """Strip FLUX-framework dressing so the endpoint honors width/height.
+    Removes [bracketed] directions and trims to a plain subject sentence."""
+    import re
+    p = re.sub(r"\[[^\]]*\]", "", prompt)          # drop [bracketed notes]
+    p = re.sub(r"\s*,\s*", ". ", p)               # commas -> sentence breaks
+    p = re.sub(r"\s+", " ", p).strip()
+    # keep first ~2 sentences (cap length) for a simpler ask
+    sents = [s.strip() for s in re.split(r"(?<=[.!?])\s+", p) if s.strip()]
+    p = ". ".join(sents[:2])
+    if not p.endswith("."):
+        p += "."
+    return p[:220]
+
 
 
 # --------------------------------------------------------------------------- #
