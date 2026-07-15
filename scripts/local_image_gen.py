@@ -51,9 +51,15 @@ import urllib.request
 try:
     from PIL import Image
     from PIL.Image import LANCZOS  # type: ignore[attr-defined]
-except ImportError:  # pragma: no cover - Pillow always present in this env
-    Image = None
-    LANCZOS = None
+except ImportError:
+    # Crop-to-3:4 is REQUIRED (endpoint returns 1280x720). Fail loudly rather
+    # than silently saving a landscape image.
+    sys.stderr.write(
+        "ERROR: Pillow is required for ensure_crop() (3:4 output).\n"
+        "Install it:  python3 -m pip install --user pillow\n"
+        "             (or: uv pip install pillow)\n"
+    )
+    sys.exit(2)
 
 DEFAULT_BASE = "https://macbook-pro.tailc4e23e.ts.net:8443"
 DEFAULT_W, DEFAULT_H = 768, 1024
@@ -125,8 +131,7 @@ def _get_bytes(url, timeout=120):
 # Crop -> exact 3:4
 # --------------------------------------------------------------------------- #
 def ensure_crop(image_bytes, width, height):
-    if Image is None:
-        return image_bytes
+    # PIL is required (see import above); if missing the script already exits.
     im = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     if (im.width, im.height) == (width, height):
         out = io.BytesIO(); im.save(out, format="PNG"); return out.getvalue()
